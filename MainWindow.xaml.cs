@@ -164,6 +164,9 @@ namespace DesktopNote
                 }
             }
 
+            // Ensure window stays on top when docked (fix: docked note hidden behind other windows after system reboot)
+            Topmost = true;
+
             var anim_move = new DoubleAnimation(toval, new Duration(new TimeSpan(0, 0, 0, 0, 500))) {
                 EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
             };
@@ -212,6 +215,9 @@ namespace DesktopNote
             }
             else
                 return;
+
+            // Restore Topmost to AutoDock setting when undocked (fix: docked note hidden behind other windows after system reboot)
+            Topmost = CurrentSetting.AutoDock;
 
             var anim_move = new DoubleAnimation(toval, new Duration(new TimeSpan(0, 0, 0, 0, 300)), FillBehavior.Stop) {
                 EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
