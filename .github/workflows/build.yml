@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - master
+    tags:
+      - 'v*'
     paths-ignore:
       - 'README.md'
   workflow_dispatch:
@@ -28,17 +30,31 @@ jobs:
       - name: Build Solution
         run: msbuild DesktopNote.sln /p:Configuration=Release /p:Platform="Any CPU" /t:Clean,Build
 
-      - name: Extract Version from AssemblyInfo
+      - name: Determine Version
         id: version
         shell: pwsh
         run: |
-          $content = Get-Content -Path "Properties\AssemblyInfo.cs" -Raw
-          if ($content -match 'AssemblyVersion\("(\d+)\.(\d+)\.(\d+)\.\d+"\)') {
-            $ver = "$($matches[1]).$($matches[2]).$($matches[3])"
+          # When triggered by a tag push, use the tag name as version
+          if ($env:GITHUB_REF -match '^refs/tags/v(\d+\.\d+\.\d+)$') {
+            $ver = $matches[1]
             echo "VERSION=$ver" >> $env:GITHUB_OUTPUT
-            echo "Version: $ver"
+            echo "TAG=v$ver" >> $env:GITHUB_OUTPUT
+            echo "IS_TAG=true" >> $env:GITHUB_OUTPUT
+            echo "Version (from tag): $ver"
           } else {
-            echo "VERSION=0.0.0" >> $env:GITHUB_OUTPUT
+            # Otherwise read from AssemblyInfo.cs
+            $content = Get-Content -Path "Properties\AssemblyInfo.cs" -Raw
+            if ($content -match 'AssemblyVersion\("(\d+)\.(\d+)\.(\d+)\.\d+"\)') {
+              $ver = "$($matches[1]).$($matches[2]).$($matches[3])"
+              echo "VERSION=$ver" >> $env:GITHUB_OUTPUT
+              echo "TAG=v$ver" >> $env:GITHUB_OUTPUT
+              echo "IS_TAG=false" >> $env:GITHUB_OUTPUT
+              echo "Version (from AssemblyInfo): $ver"
+            } else {
+              echo "VERSION=0.0.0" >> $env:GITHUB_OUTPUT
+              echo "TAG=v0.0.0" >> $env:GITHUB_OUTPUT
+              echo "IS_TAG=false" >> $env:GITHUB_OUTPUT
+            }
           }
 
       - name: Create ZIP Archive
@@ -46,10 +62,10 @@ jobs:
         run: |
           Compress-Archive -Path bin\Release\* -DestinationPath DesktopNote-v${{ steps.version.outputs.VERSION }}.zip
 
-      - name: Create GitHub Release
+      - name: Create/Update GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.version.outputs.VERSION }}
+          tag_name: ${{ steps.version.outputs.TAG }}
           name: DesktopNote v${{ steps.version.outputs.VERSION }}
           body: |
             ## Changes
