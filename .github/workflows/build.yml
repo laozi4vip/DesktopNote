@@ -1,0 +1,33 @@
+name: Build DesktopNote
+
+on:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - 'README.md'
+      - '.github/**'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Restore NuGet Packages
+        run: nuget restore DesktopNote.sln
+
+      - name: Build Solution
+        run: msbuild DesktopNote.sln /p:Configuration=Release /p:Platform="Any CPU" /t:Clean,Build
+
+      - name: Publish Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DesktopNote-Release
+          path: bin/Release/
