@@ -1,4 +1,4 @@
-name: Build DesktopNote
+name: Build and Release DesktopNote
 
 on:
   push:
@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  build-and-release:
     runs-on: windows-latest
 
     steps:
@@ -26,8 +26,42 @@ jobs:
       - name: Build Solution
         run: msbuild DesktopNote.sln /p:Configuration=Release /p:Platform="Any CPU" /t:Clean,Build
 
-      - name: Publish Artifact
+      - name: Extract Version from AssemblyInfo
+        id: version
+        shell: pwsh
+        run: |
+          $content = Get-Content -Path "Properties\AssemblyInfo.cs" -Raw
+          if ($content -match 'AssemblyVersion\("(\d+)\.(\d+)\.(\d+)\.\d+"\)') {
+            $ver = "$($matches[1]).$($matches[2]).$($matches[3])"
+            echo "VERSION=$ver" >> $env:GITHUB_OUTPUT
+            echo "Version: $ver"
+          } else {
+            echo "VERSION=0.0.0" >> $env:GITHUB_OUTPUT
+          }
+
+      - name: Create ZIP Archive
+        shell: pwsh
+        run: |
+          Compress-Archive -Path bin\Release\* -DestinationPath DesktopNote-v${{ steps.version.outputs.VERSION }}.zip
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.VERSION }}
+          name: DesktopNote v${{ steps.version.outputs.VERSION }}
+          body: |
+            ## Changes
+            - Fix: docked note now stays on top after system reboot
+
+            See full commit history for details.
+          files: DesktopNote-v${{ steps.version.outputs.VERSION }}.zip
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: DesktopNote-Release
-          path: bin/Release/
+          name: DesktopNote-v${{ steps.version.outputs.VERSION }}
+          path: bin\Release\
