@@ -1,11 +1,6 @@
 # DesktopNote
 The only **simple** yet **rich-featured** desktop note app you'll ever need for your PC.
 
-## Download
-[![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/changbowen/DesktopNote)](https://github.com/changbowen/DesktopNote/releases/latest/download/DesktopNote.zip)
-
-If you really like it [![PayPal](https://img.shields.io/badge/%24-PayPal-blue.svg)](https://www.paypal.me/BowenChang) or [支付宝](https://user-images.githubusercontent.com/15975872/29361889-175fef58-82bc-11e7-9e3b-ed3c748456b8.png)
-
 ## Notice About Recent Changes
 **If you are upgrading from a very old version:**
 
